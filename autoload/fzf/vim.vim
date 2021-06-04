@@ -405,7 +405,7 @@ function! s:line_handler(lines)
   normal! ^zvzz
 endfunction
 
-function! fzf#vim#_lines(all)
+function! fzf#vim#_lines(query)
   let cur = []
   let rest = []
   let buf = bufnr('')
@@ -435,24 +435,33 @@ function! fzf#vim#_lines(all)
       let bufname = ''
     endif
     let linefmt = s:blue("%2d\t", "TabLine")."%s".s:yellow("\t%4d ", "LineNr")."\t%s"
-    call extend(b == buf ? cur : rest,
-    \ filter(
-    \   map(lines,
-    \       '(!a:all && empty(v:val)) ? "" : printf(linefmt, b, bufname, v:key + 1, v:val)'),
-    \   'a:all || !empty(v:val)'))
+
+    let context = []
+    if empty(a:query)
+      let context = filter(
+            \   map(lines,
+            \       '(empty(v:val)) ? "" : printf(linefmt, b, bufname, v:key + 1, v:val)'),
+            \   '!empty(v:val)')
+    else
+      let context = filter(
+            \   map(lines,
+            \       '(empty(v:val) || v:val !~ a:query) ? "" : printf(linefmt, b, bufname, v:key + 1, v:val)'),
+            \   '!empty(v:val)')
+    end
+    call extend(b == buf ? cur : rest, context)
   endfor
   return [display_bufnames, extend(cur, rest)]
 endfunction
 
 function! fzf#vim#lines(...)
-  let [display_bufnames, lines] = fzf#vim#_lines(1)
-  let nth = display_bufnames ? 3 : 2
   let [query, args] = (a:0 && type(a:1) == type('')) ?
         \ [a:1, a:000[1:]] : ['', a:000]
+  let [display_bufnames, lines] = fzf#vim#_lines(query)
+  let nth = display_bufnames ? 3 : 2
   return s:fzf('lines', {
   \ 'source':  lines,
   \ 'sink*':   s:function('s:line_handler'),
-  \ 'options': s:reverse_list(['+m', '--tiebreak=index', '--prompt', 'Lines> ', '--ansi', '--extended', '--nth='.nth.'..', '--tabstop=1', '--query', query])
+  \ 'options': s:reverse_list(['+m', '--tiebreak=index', '--prompt', 'Lines> ', '--ansi', '--extended', '--nth='.nth.'..', '--tabstop=1'])
   \}, args)
 endfunction
 
