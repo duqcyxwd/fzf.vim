@@ -386,6 +386,16 @@ function! fzf#vim#files(dir, ...)
   return s:fzf('files', args, a:000)
 endfunction
 
+
+function! fzf#vim#queryfiles(query, ...)
+  let args = {}
+  let dir = s:shortpath()
+  " echom "query: " . a:query
+  let args.options = ['-m', '--query', a:query, '--prompt', strwidth(dir) < &columns / 2 - 20 ? dir : '> ']
+  call s:merge_opts(args, get(g:, 'fzf_files_options', []))
+  return s:fzf('files', args, a:000)
+endfunction
+
 " ------------------------------------------------------------------
 " Lines
 " ------------------------------------------------------------------
